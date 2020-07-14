@@ -5,8 +5,8 @@ import arcade
 import random
 
 # Gravity & BOUNCYNESS
-GRAVITY = 1
-BOUNCYNESS = 1
+GRAVITY = 2
+BOUNCYNESS = 0.92
 
 SCREEN_TITLE = "Platform"
 
@@ -35,7 +35,8 @@ class Ball:
         self.y = 0
         self.change_x = 0
         self.change_y = 0
-        self.size     = SPRITE_SIZE/10
+        self.size     = SPRITE_SIZE * 0.2
+        self.bouncyness = BOUNCYNESS
         self.color    = None
 
 def make_ball(x, y):
@@ -48,10 +49,10 @@ def make_ball(x, y):
     ball.y = y
 
     """ Give an angle to the ball"""
-    ball.change_x = random.random()*2 -1
+    ball.change_x = random.random()*100 - 50
 
     """ Give a color to the ball"""
-    ball.color = arcade.color.BLACK
+    ball.color = arcade.color.WHITE
 
     return ball
 
@@ -68,32 +69,15 @@ class myGame(arcade.Window):
         # go into a list.
         self.ball_list = []
         ball = make_ball(SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
-        self.wall_list = None
         self.ball_list.append(ball)
 
-        arcade.set_background_color(arcade.csscolor.WHITE_SMOKE)
+        arcade.set_background_color(arcade.csscolor.GREY)
 
     def setup(self):
         """ Set up everything with the game """
         # Create the Sprite lists
-        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
-
         # Create the ground
         # This shows using a loop to place multiple sprites horizontally
-        for x in range(0, SCREEN_WIDTH, 64):
-            wall = arcade.Sprite(":resources:images/tiles/grassMid.png", SPRITE_SCALING_TILES)
-            wall.center_x = x + 32
-            wall.center_y = 32
-            self.wall_list.append(wall)
-        for y in range(0, SCREEN_HEIGHT, 64):
-            wall = arcade.Sprite(":resources:images/tiles/brickBrown.png", SPRITE_SCALING_TILES)
-            wall.center_x = 32
-            wall.center_y = y + 32 + 64
-            self.wall_list.append(wall)
-            wall = arcade.Sprite(":resources:images/tiles/brickBrown.png", SPRITE_SCALING_TILES)
-            wall.center_x = 32 + SCREEN_WIDTH - 64
-            wall.center_y = y + 32 + 64
-            self.wall_list.append(wall)
 
     def on_draw(self):
         """ Render  the screen."""
@@ -101,33 +85,38 @@ class myGame(arcade.Window):
         arcade.start_render()
 
         # Draw our sprites
-        self.wall_list.draw()
 
         for ball in self.ball_list:
             arcade.draw_circle_filled(ball.x, ball.y, ball.size, ball.color)
 
     def on_update(self, delta_time):
+
         """ Movement and game logic"""
         for ball in self.ball_list:
             ball.x += ball.change_x
             ball.y += ball.change_y
 
-            if ball.x < ball.size:
-                ball.change_x *= -BOUNCYNESS
-
-            if ball.y < ball.size:
-                if ball.change_y < GRAVITY * 0.1:
-                    ball.change_y *= -BOUNCYNESS
-                else :
-                    ball.change_y *= -BOUNCYNESS/2
-
-            if ball.x > SCREEN_WIDTH - ball.size:
-                ball.change_x *= -BOUNCYNESS
-
-            if ball.y > SCREEN_HEIGHT - ball.size:
-                ball.change_y *= -BOUNCYNESS
-
             ball.change_y -= GRAVITY
+
+
+            if ball.x < ball.size and ball.change_x < 0:
+                ball.change_x *= -ball.bouncyness
+                ball.change_y *= ball.bouncyness
+
+            if ball.y < ball.size and ball.change_y < 0:
+                ball.bouncyness /= 1.1
+                ball.change_y *= -ball.bouncyness
+                ball.change_x *= ball.bouncyness
+
+            if ball.x > SCREEN_WIDTH - ball.size and ball.change_x > 0:
+                ball.change_x *= -ball.bouncyness
+                ball.change_y *= ball.bouncyness
+
+            if ball.y > SCREEN_HEIGHT - ball.size and ball.change_x < 0:
+                ball.change_y *= -ball.bouncyness
+                ball.change_x *= ball.bouncyness
+
+
 
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -144,7 +133,6 @@ def main():
     window.setup()
 
     # Tell the computer to call the draw command at the specified interval.
-    arcade.schedule(window.on_update, 100)
 
     arcade.run()
 
